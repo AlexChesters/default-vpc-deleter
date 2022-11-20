@@ -1,9 +1,14 @@
 set -e
 
-echo "account id - $ACCOUNT_ID"
-exit 0
+DELETER_ROLE="arn:aws:iam::$ACCOUNT_ID:role/default-vpc-deleter-target-account-role"
 
-# TODO: assume role
+DELETER_ROLE_CREDENTIALS=$(aws sts assume-role \
+  --role-arn $DELETER_ROLE \
+  --role-session-name default-vpc-deleter | jq -r .Credentials)
+
+export AWS_ACCESS_KEY_ID=$(echo $UPDATE_ROLE_CREDENTIALS | jq -r .AccessKeyId)
+export AWS_SECRET_ACCESS_KEY=$(echo $UPDATE_ROLE_CREDENTIALS | jq -r .SecretAccessKey)
+export AWS_SESSION_TOKEN=$(echo $UPDATE_ROLE_CREDENTIALS | jq -r .SessionToken)
 
 for region in $(aws ec2 describe-regions --region eu-west-1 | jq -r .Regions[].RegionName); do
   echo "* Region ${region}"

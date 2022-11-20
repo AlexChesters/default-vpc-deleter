@@ -3,5 +3,4 @@ version: 0.2
 phases:
   build:
     commands:
-      - echo "account id - $ACCOUNT_ID"
-      # - sh delete-vpc.sh
+      - sh delete-vpc.sh

@@ -2,6 +2,9 @@ set -e
 
 ACCOUNT_ID=$1
 
+echo "account id - $ACCOUNT_ID"
+exit 0
+
 # TODO: assume role
 
 for region in $(aws ec2 describe-regions --region eu-west-1 | jq -r .Regions[].RegionName); do

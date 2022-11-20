@@ -6,9 +6,9 @@ DELETER_ROLE_CREDENTIALS=$(aws sts assume-role \
   --role-arn $DELETER_ROLE \
   --role-session-name default-vpc-deleter | jq -r .Credentials)
 
-export AWS_ACCESS_KEY_ID=$(echo $UPDATE_ROLE_CREDENTIALS | jq -r .AccessKeyId)
-export AWS_SECRET_ACCESS_KEY=$(echo $UPDATE_ROLE_CREDENTIALS | jq -r .SecretAccessKey)
-export AWS_SESSION_TOKEN=$(echo $UPDATE_ROLE_CREDENTIALS | jq -r .SessionToken)
+export AWS_ACCESS_KEY_ID=$(echo $DELETER_ROLE_CREDENTIALS | jq -r .AccessKeyId)
+export AWS_SECRET_ACCESS_KEY=$(echo $DELETER_ROLE_CREDENTIALS | jq -r .SecretAccessKey)
+export AWS_SESSION_TOKEN=$(echo $DELETER_ROLE_CREDENTIALS | jq -r .SessionToken)
 
 for region in $(aws ec2 describe-regions --region eu-west-1 | jq -r .Regions[].RegionName); do
   echo "* Region ${region}"

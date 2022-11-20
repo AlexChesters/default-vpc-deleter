@@ -1,7 +1,5 @@
 set -e
 
-ACCOUNT_ID=$1
-
 echo "account id - $ACCOUNT_ID"
 exit 0
 

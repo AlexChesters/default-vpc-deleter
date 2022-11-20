@@ -77,12 +77,12 @@ Resources:
       Definition:
         StartAt: CodeBuild
         States:
-          FetchServerKnowledge:
+          CodeBuild:
             Type: Task
             Resource: arn:aws:states:::codebuild:startBuild.sync
             ResultPath: $
             OutputPath: $
-            Next: CodeBuild
+            End: true
             Parameters:
               ProjectName: !Ref CodeBuildProject
               EnvironmentVariablesOverride:

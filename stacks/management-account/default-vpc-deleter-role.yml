@@ -1,0 +1,32 @@
+Description: IAM role for use by AlexChesters/default-vpc-deleter to allow deletion of the default VPC
+Resources:
+  DefaultVPCDeleterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              AWS:
+                - arn:aws:iam::723247229166:role/default-vpc-deleter-role
+              Service:
+                - codebuild.amazonaws.com
+      RoleName: default-vpc-deleter-target-account-role
+      Policies:
+        - PolicyName: default-vpc-deleter-target-account-policy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeRegions
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeInternetGateways
+                  - ec2:DetachInternetGateway
+                  - ec2:DeleteInternetGateway
+                  - ec2:DescribeSubnets
+                  - ec2:DeleteSubnet
+                  - ec2:DeleteVpc
+                Resource:
+                  - "*"

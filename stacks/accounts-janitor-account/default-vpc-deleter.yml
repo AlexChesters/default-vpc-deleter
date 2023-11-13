@@ -1,53 +1,53 @@
 Description: default-vpc-deleter
 Resources:
-  CodeBuildRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: codebuild.amazonaws.com
-      RoleName: default-vpc-deleter-role
-      Policies:
-        - PolicyName: default-vpc-deleter-policy
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource:
-                  - "*"
-              - Effect: Allow
-                Action:
-                  - sts:AssumeRole
-                  - iam:PassRole
-                Resource:
-                  - arn:aws:iam::*:role/default-vpc-deleter-target-account-role
-  CodeBuildProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: NO_ARTIFACTS
-      Cache:
-        Type: NO_CACHE
-      TimeoutInMinutes: 5
-      Description: wm backup
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:5.0
-        Type: LINUX_CONTAINER
-      Name: default-vpc-deleter
-      ServiceRole: !GetAtt CodeBuildRole.Arn
-      Source:
-        Type: GITHUB
-        Auth:
-          Type: OAUTH
-        Location: https://github.com/AlexChesters/default-vpc-deleter.git
-        BuildSpec: buildspec.yml
+  # CodeBuildRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: codebuild.amazonaws.com
+  #     RoleName: default-vpc-deleter-role
+  #     Policies:
+  #       - PolicyName: default-vpc-deleter-policy
+  #         PolicyDocument:
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - logs:CreateLogGroup
+  #                 - logs:CreateLogStream
+  #                 - logs:PutLogEvents
+  #               Resource:
+  #                 - "*"
+  #             - Effect: Allow
+  #               Action:
+  #                 - sts:AssumeRole
+  #                 - iam:PassRole
+  #               Resource:
+  #                 - arn:aws:iam::*:role/default-vpc-deleter-target-account-role
+  # CodeBuildProject:
+  #   Type: AWS::CodeBuild::Project
+  #   Properties:
+  #     Artifacts:
+  #       Type: NO_ARTIFACTS
+  #     Cache:
+  #       Type: NO_CACHE
+  #     TimeoutInMinutes: 5
+  #     Description: wm backup
+  #     Environment:
+  #       ComputeType: BUILD_GENERAL1_SMALL
+  #       Image: aws/codebuild/standard:5.0
+  #       Type: LINUX_CONTAINER
+  #     Name: default-vpc-deleter
+  #     ServiceRole: !GetAtt CodeBuildRole.Arn
+  #     Source:
+  #       Type: GITHUB
+  #       Auth:
+  #         Type: OAUTH
+  #       Location: https://github.com/AlexChesters/default-vpc-deleter.git
+  #       BuildSpec: buildspec.yml
   StateMachineRole:
     Type: AWS::IAM::Role
     Properties:
@@ -63,12 +63,12 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-                - Effect: Allow
-                  Action:
-                    - codebuild:StartBuild
-                    - codebuild:StopBuild
-                    - codebuild:BatchGetBuilds
-                  Resource: !GetAtt CodeBuildProject.Arn
+                # - Effect: Allow
+                #   Action:
+                #     - codebuild:StartBuild
+                #     - codebuild:StopBuild
+                #     - codebuild:BatchGetBuilds
+                #   Resource: !GetAtt CodeBuildProject.Arn
                 - Effect: Allow
                   Action:
                     - events:PutTargets
@@ -76,26 +76,46 @@ Resources:
                     - events:DescribeRule
                   Resource:
                   - !Sub "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventForCodeBuildStartBuildRule"
+                - Effect: Allow
+                  Action:
+                    - ec2:DescribeRegions
+                    - ec2:DescribeVpcs
+                    - ec2:DescribeInternetGateways
+                    - ec2:DetachInternetGateway
+                    - ec2:DescribeSubnets
+                    - ec2:DeleteSubnet
+                    - ec2:DeleteVpc
+                  Resource:
+                  - "*"
   StateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
       StateMachineName: default-vpc-deleter
       RoleArn: !GetAtt StateMachineRole.Arn
       Definition:
-        StartAt: CodeBuild
+        StartAt: DescribeRegions
         States:
-          CodeBuild:
+          DescribeRegions:
             Type: Task
-            Resource: arn:aws:states:::codebuild:startBuild.sync
-            ResultPath: $
-            OutputPath: $
-            End: true
             Parameters:
-              ProjectName: !Ref CodeBuildProject
-              EnvironmentVariablesOverride:
-                - Name: "ACCOUNT_ID"
-                  'Value.$': "$$.Execution.Input.account_id"
-                  Type: "PLAINTEXT"
+              Filters:
+              - Name: isDefault
+                Values:
+                  - 'true'
+            Resource: arn:aws:states:::aws-sdk:ec2:describeRegions
+            End: true
+          # CodeBuild:
+          #   Type: Task
+          #   Resource: arn:aws:states:::codebuild:startBuild.sync
+          #   ResultPath: $
+          #   OutputPath: $
+          #   End: true
+          #   Parameters:
+          #     ProjectName: !Ref CodeBuildProject
+          #     EnvironmentVariablesOverride:
+          #       - Name: "ACCOUNT_ID"
+          #         'Value.$': "$$.Execution.Input.account_id"
+          #         Type: "PLAINTEXT"
   StateMachineFailedAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:

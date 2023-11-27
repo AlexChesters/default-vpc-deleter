@@ -45,7 +45,7 @@ Resources:
       Cache:
         Type: NO_CACHE
       TimeoutInMinutes: 5
-      Description: wm backup
+      Description: delete's the default vpc in a specified account
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:5.0

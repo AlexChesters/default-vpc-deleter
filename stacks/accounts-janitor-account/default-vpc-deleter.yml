@@ -1,53 +1,53 @@
 Description: default-vpc-deleter
 Resources:
-  # CodeBuildRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Statement:
-  #         - Action: sts:AssumeRole
-  #           Effect: Allow
-  #           Principal:
-  #             Service: codebuild.amazonaws.com
-  #     RoleName: default-vpc-deleter-role
-  #     Policies:
-  #       - PolicyName: default-vpc-deleter-policy
-  #         PolicyDocument:
-  #           Statement:
-  #             - Effect: Allow
-  #               Action:
-  #                 - logs:CreateLogGroup
-  #                 - logs:CreateLogStream
-  #                 - logs:PutLogEvents
-  #               Resource:
-  #                 - "*"
-  #             - Effect: Allow
-  #               Action:
-  #                 - sts:AssumeRole
-  #                 - iam:PassRole
-  #               Resource:
-  #                 - arn:aws:iam::*:role/default-vpc-deleter-target-account-role
-  # CodeBuildProject:
-  #   Type: AWS::CodeBuild::Project
-  #   Properties:
-  #     Artifacts:
-  #       Type: NO_ARTIFACTS
-  #     Cache:
-  #       Type: NO_CACHE
-  #     TimeoutInMinutes: 5
-  #     Description: wm backup
-  #     Environment:
-  #       ComputeType: BUILD_GENERAL1_SMALL
-  #       Image: aws/codebuild/standard:5.0
-  #       Type: LINUX_CONTAINER
-  #     Name: default-vpc-deleter
-  #     ServiceRole: !GetAtt CodeBuildRole.Arn
-  #     Source:
-  #       Type: GITHUB
-  #       Auth:
-  #         Type: OAUTH
-  #       Location: https://github.com/AlexChesters/default-vpc-deleter.git
-  #       BuildSpec: buildspec.yml
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+      RoleName: default-vpc-deleter-role
+      Policies:
+        - PolicyName: default-vpc-deleter-policy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                  - iam:PassRole
+                Resource:
+                  - arn:aws:iam::*:role/default-vpc-deleter-target-account-role
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Cache:
+        Type: NO_CACHE
+      TimeoutInMinutes: 5
+      Description: wm backup
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        Type: LINUX_CONTAINER
+      Name: default-vpc-deleter
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Source:
+        Type: GITHUB
+        Auth:
+          Type: OAUTH
+        Location: https://github.com/AlexChesters/default-vpc-deleter.git
+        BuildSpec: buildspec.yml
   StateMachineRole:
     Type: AWS::IAM::Role
     Properties:
@@ -63,12 +63,17 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-                # - Effect: Allow
-                #   Action:
-                #     - codebuild:StartBuild
-                #     - codebuild:StopBuild
-                #     - codebuild:BatchGetBuilds
-                #   Resource: !GetAtt CodeBuildProject.Arn
+                - Effect: Allow
+                  Action:
+                    - codebuild:StartBuild
+                    - codebuild:StopBuild
+                    - codebuild:BatchGetBuilds
+                  Resource: !GetAtt CodeBuildProject.Arn
+                - Effect: Allow
+                  Action:
+                    - ec2:DescribeRegions
+                  Resource:
+                    - "*"
                 - Effect: Allow
                   Action:
                     - events:PutTargets
@@ -76,17 +81,17 @@ Resources:
                     - events:DescribeRule
                   Resource:
                   - !Sub "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventForCodeBuildStartBuildRule"
-                - Effect: Allow
-                  Action:
-                    - ec2:DescribeRegions
-                    - ec2:DescribeVpcs
-                    - ec2:DescribeInternetGateways
-                    - ec2:DetachInternetGateway
-                    - ec2:DescribeSubnets
-                    - ec2:DeleteSubnet
-                    - ec2:DeleteVpc
-                  Resource:
-                  - "*"
+                # - Effect: Allow
+                #   Action:
+                #     - ec2:DescribeRegions
+                #     - ec2:DescribeVpcs
+                #     - ec2:DescribeInternetGateways
+                #     - ec2:DetachInternetGateway
+                #     - ec2:DescribeSubnets
+                #     - ec2:DeleteSubnet
+                #     - ec2:DeleteVpc
+                #   Resource:
+                #   - "*"
   StateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -97,12 +102,28 @@ Resources:
         States:
           DescribeRegions:
             Type: Task
-            Parameters:
-              Filters:
-              - Name: isDefault
-                Values:
-                  - 'true'
+            Parameters: {}
             Resource: arn:aws:states:::aws-sdk:ec2:describeRegions
+            OutputPath: "$.Regions"
+            Next: DeleteVPC
+          DeleteVPC:
+            Type: Map
+            InputPath: "$"
+            ItemsPath: "$"
+            MaxConcurrency: 1
+            Iterator:
+              StartAt: "CodeBuild"
+              States:
+                CodeBuild:
+                  Type: Task
+                  Resource: arn:aws:states:::codebuild:startBuild.sync
+                  Parameters:
+                    ProjectName: !Ref CodeBuildProject
+                    EnvironmentVariablesOverride:
+                      - Name: REGION
+                        'Value.$': "$.RegionName"
+                        Type: "PLAINTEXT"
+                  End: true
             End: true
           # CodeBuild:
           #   Type: Task

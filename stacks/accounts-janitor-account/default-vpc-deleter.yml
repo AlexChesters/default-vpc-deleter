@@ -49,7 +49,7 @@ Resources:
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:5.0
-        Type: LINUX_CONTAINER
+        Type: ARM_CONTAINER
       Name: default-vpc-deleter
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Source:

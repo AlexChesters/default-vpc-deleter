@@ -3,4 +3,6 @@ version: 0.2
 phases:
   build:
     commands:
-      - sh delete-vpc.sh
+      - echo "Region $REGION"
+      - echo "Account $ACCOUNT_ID"
+      # - sh delete-vpc.sh

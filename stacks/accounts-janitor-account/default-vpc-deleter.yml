@@ -122,6 +122,9 @@ Resources:
                       - Name: REGION
                         'Value.$': "$.RegionName"
                         Type: "PLAINTEXT"
+                      - Name: ACCOUNT_ID
+                        'Value.$': "$$.Execution.Input.account_id"
+                        Type: "PLAINTEXT"
                   End: true
             End: true
   StateMachineFailedAlarm:

@@ -27,6 +27,16 @@ Resources:
                   - iam:PassRole
                 Resource:
                   - arn:aws:iam::*:role/default-vpc-deleter-target-account-role
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeVpcs
+                  - ec2:DescribeInternetGateways
+                  - ec2:DetachInternetGateway
+                  - ec2:DescribeSubnets
+                  - ec2:DeleteSubnet
+                  - ec2:DeleteVpc
+                Resource:
+                  - "*"
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -81,17 +91,6 @@ Resources:
                     - events:DescribeRule
                   Resource:
                   - !Sub "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/StepFunctionsGetEventForCodeBuildStartBuildRule"
-                # - Effect: Allow
-                #   Action:
-                #     - ec2:DescribeRegions
-                #     - ec2:DescribeVpcs
-                #     - ec2:DescribeInternetGateways
-                #     - ec2:DetachInternetGateway
-                #     - ec2:DescribeSubnets
-                #     - ec2:DeleteSubnet
-                #     - ec2:DeleteVpc
-                #   Resource:
-                #   - "*"
   StateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -125,18 +124,6 @@ Resources:
                         Type: "PLAINTEXT"
                   End: true
             End: true
-          # CodeBuild:
-          #   Type: Task
-          #   Resource: arn:aws:states:::codebuild:startBuild.sync
-          #   ResultPath: $
-          #   OutputPath: $
-          #   End: true
-          #   Parameters:
-          #     ProjectName: !Ref CodeBuildProject
-          #     EnvironmentVariablesOverride:
-          #       - Name: "ACCOUNT_ID"
-          #         'Value.$': "$$.Execution.Input.account_id"
-          #         Type: "PLAINTEXT"
   StateMachineFailedAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:

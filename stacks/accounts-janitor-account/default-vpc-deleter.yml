@@ -100,7 +100,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
-        - !ImportValue notification-topic
+        - !ImportValue notification-topic-arn
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: StateMachineArn

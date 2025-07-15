@@ -96,19 +96,3 @@ Resources:
                 - Name: "ACCOUNT_ID"
                   'Value.$': "$$.Execution.Input.account_id"
                   Type: "PLAINTEXT"
-  StateMachineFailedAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmActions:
-        - !ImportValue notification-topic-arn
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      Dimensions:
-        - Name: StateMachineArn
-          Value: !Ref StateMachine
-      EvaluationPeriods: 1
-      MetricName: ExecutionsFailed
-      Namespace: AWS/States
-      Period: 86400 # one day
-      TreatMissingData: notBreaching
-      Statistic: Sum
-      Threshold: 1

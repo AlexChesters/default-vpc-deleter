@@ -1,8 +1,8 @@
 set -e
 
-aws cloudformation deploy \
-  --template-file stacks/accounts-janitor-account/default-vpc-deleter.yml \
-  --stack-name default-vpc-deleter \
-  --capabilities CAPABILITY_NAMED_IAM \
+rain deploy \
+  stacks/accounts-janitor-account/default-vpc-deleter.yml \
+  default-vpc-deleter \
   --region eu-west-1 \
-  --profile accounts-janitor
+  --profile accounts-janitor \
+  --yes
